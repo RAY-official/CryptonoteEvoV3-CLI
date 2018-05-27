@@ -24,3 +24,7 @@ Release notes 3.0.4
 - add on CN-7 by Aiwe K from Karbowanec developer
 - change contrib
 - added submodules
+
+Release notes 3.0.5
+- Change upgrade height
+- Expand tx size
