@@ -14,6 +14,7 @@
 #include "base/CryptoNoteBasic.h"
 #include "base/CryptoNoteSerialization.h"
 #include "core/Currency.h"
+#include "log/LoggerRef.h"
 #include "ISerializer.h"
 #include "Serialization/SerializationOverloads.h"
 
@@ -179,11 +180,9 @@ class TransfersContainer : public ITransfersContainer {
 
 public:
 
-  TransfersContainer(const CryptoNote::Currency& currency, size_t transactionSpendableAge);
+  TransfersContainer(const CryptoNote::Currency& currency, Logging::ILogger& logger, size_t transactionSpendableAge);
 
-  bool addTransaction(const TransactionBlockInfo& block, const ITransactionReader& tx,
-                      const std::vector<TransactionOutputInformationIn>& transfers,
-                      std::vector<std::string>&& messages, std::vector<TransactionOutputInformation>* unlockingTransfers = nullptr);
+  bool addTransaction(const TransactionBlockInfo& block, const ITransactionReader& tx, const std::vector<TransactionOutputInformationIn>& transfers);
   bool deleteUnconfirmedTransaction(const Crypto::Hash& transactionHash);
   bool markTransactionConfirmed(const TransactionBlockInfo& block, const Crypto::Hash& transactionHash, const std::vector<uint32_t>& globalIndices);
 
@@ -334,7 +333,7 @@ private:
   > TransfersUnlockMultiIndex;
 
 private:
-  void addTransaction(const TransactionBlockInfo& block, const ITransactionReader& tx, std::vector<std::string>&& messages);
+  void addTransaction(const TransactionBlockInfo& block, const ITransactionReader& tx);
   bool addTransactionOutputs(const TransactionBlockInfo& block, const ITransactionReader& tx,
                              const std::vector<TransactionOutputInformationIn>& transfers);
   bool addTransactionInputs(const TransactionBlockInfo& block, const ITransactionReader& tx);
@@ -351,6 +350,7 @@ private:
   TransactionOutputInformation getAvailableOutput(const TransactionOutputKey& transactionOutputKey) const;
 
   void copyToSpent(const TransactionBlockInfo& block, const ITransactionReader& tx, size_t inputIndex, const TransactionOutputInformationEx& output);
+  void repair();
 
   void rebuildTransfersUnlockJobs(TransfersUnlockMultiIndex& transfersUnlockJobs, const AvailableTransfersMultiIndex& availableTransfers,
                                   const SpentTransfersMultiIndex& spentTransfers);
@@ -362,12 +362,12 @@ private:
   AvailableTransfersMultiIndex m_availableTransfers;
   SpentTransfersMultiIndex m_spentTransfers;
   TransfersUnlockMultiIndex m_transfersUnlockJobs;
-  //std::unordered_map<KeyImage, KeyOutputInfo, boost::hash<KeyImage>> m_keyImages;
 
   uint32_t m_currentHeight; // current height is needed to check if a transfer is unlocked
   size_t m_transactionSpendableAge;
   const CryptoNote::Currency& m_currency;
   mutable std::mutex m_mutex;
+  Logging::LoggerRef m_logger;
 };
 
 }

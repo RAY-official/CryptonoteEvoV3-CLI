@@ -21,7 +21,6 @@
 #include <System/EventLock.h>
 
 #include "PaymentServiceJsonRpcMessages.h"
-#include "WalletFactory.h"
 #include "NodeFactory.h"
 
 #include "wallet/WalletGreen.h"
@@ -377,15 +376,15 @@ void generateNewWallet(const CryptoNote::Currency &currency, const WalletConfigu
   CryptoNote::INode* nodeStub = NodeFactory::createNodeStub();
   std::unique_ptr<CryptoNote::INode> nodeGuard(nodeStub);
 
-  CryptoNote::IWallet* wallet = WalletFactory::createWallet(currency, *nodeStub, dispatcher);
+  CryptoNote::IWallet* wallet = new CryptoNote::WalletGreen(dispatcher, currency, *nodeStub, logger);
   std::unique_ptr<CryptoNote::IWallet> walletGuard(wallet);
 
   log(Logging::INFO) << "Generating new wallet";
 
   std::fstream walletFile;
-  createWalletFile(walletFile, conf.walletFile);
+  wallet->initialize(conf.walletFile, conf.walletPassword);
 
-  wallet->initialize(conf.walletPassword);
+  wallet->initialize(conf.walletFile, conf.walletPassword);
   auto address = wallet->createAddress();
 
   log(Logging::INFO) << "New wallet is generated. Address: " << address;

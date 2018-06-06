@@ -20,29 +20,23 @@ const size_t   BLOCKCHAIN_TIMESTAMP_CHECK_WINDOW             = 11;
 
 const uint64_t MONEY_SUPPLY                                  = UINT64_C(250000000);
 
-//LWMA
-const size_t   MIN_MIXIN                          	     = 0;
-const uint8_t  MANDATORY_MIXIN_BLOCK_VERSION                 = 0;
-const uint32_t MIXIN_START_HEIGHT                  	     = 0;
-const uint32_t MANDATORY_TRANSACTION                         = 0;
-const uint32_t KILL_HEIGHT                                   = 0;
 const uint64_t TAIL_EMISSION_REWARD                          = 500;
 const size_t   CRYPTONOTE_COIN_VERSION                       = 1;
 
 const size_t   CRYPTONOTE_REWARD_BLOCKS_WINDOW               = 100;
 const size_t   CRYPTONOTE_BLOCK_GRANTED_FULL_REWARD_ZONE     = 1000000; //size of block (bytes) after which reward for block calculated using block size
-const size_t   CRYPTONOTE_BLOCK_GRANTED_FULL_REWARD_ZONE_V2  = 1000000;
-const size_t   CRYPTONOTE_BLOCK_GRANTED_FULL_REWARD_ZONE_V1  = 100000;
+const size_t   CRYPTONOTE_BLOCK_GRANTED_FULL_REWARD_ZONE_V2      = 1000000;
+const size_t   CRYPTONOTE_BLOCK_GRANTED_FULL_REWARD_ZONE_V1      = 100000;
 const size_t   CRYPTONOTE_BLOCK_GRANTED_FULL_REWARD_ZONE_CURRENT = CRYPTONOTE_BLOCK_GRANTED_FULL_REWARD_ZONE;
-const size_t   CRYPTONOTE_COINBASE_BLOB_RESERVED_SIZE        = 600;
-const size_t   CRYPTONOTE_DISPLAY_DECIMAL_POINT              = 6;
+const size_t   CRYPTONOTE_COINBASE_BLOB_RESERVED_SIZE            = 600;
+const size_t   CRYPTONOTE_DISPLAY_DECIMAL_POINT                  = 6;
 
 // COIN - number of smallest units in one coin
 const uint64_t POINT                                         = UINT64_C(1000); // pow(10, 3)
 const uint64_t COIN                                          = UINT64_C(100000000); // pow(10, 6)
 const uint64_t MINIMUM_FEE                                   = UINT64_C(10000); // pow(10, 4)
 const uint64_t DEFAULT_DUST_THRESHOLD                        = UINT64_C(10000); // pow(10, 4)
-const unsigned EMISSION_SPEED_FACTOR 			     		 = 20;
+const unsigned EMISSION_SPEED_FACTOR 			     = 20;
 static_assert(EMISSION_SPEED_FACTOR <= 8 * sizeof(uint64_t), "Bad EMISSION_SPEED_FACTOR");
 
 const uint64_t EXPECTED_NUMBER_OF_BLOCKS_PER_DAY             = 24 * 60 * 60 / DIFFICULTY_TARGET;
@@ -74,7 +68,7 @@ const uint64_t CRYPTONOTE_MEMPOOL_TX_LIVETIME                = (60 * 60 * 14); /
 const uint64_t CRYPTONOTE_MEMPOOL_TX_FROM_ALT_BLOCK_LIVETIME = (60 * 60 * 24); // seconds, one day
 const uint64_t CRYPTONOTE_NUMBER_OF_PERIODS_TO_FORGET_TX_DELETED_FROM_POOL = 7; // CRYPTONOTE_NUMBER_OF_PERIODS_TO_FORGET_TX_DELETED_FROM_POOL * CRYPTONOTE_MEMPOOL_TX_LIVETIME = time to forget tx
 
-const size_t   FUSION_TX_MAX_SIZE                            = CRYPTONOTE_MAX_TX_SIZE_LIMIT * 2;
+const size_t   FUSION_TX_MAX_SIZE                            = CRYPTONOTE_BLOCK_GRANTED_FULL_REWARD_ZONE_CURRENT * 30 / 100;
 const size_t   FUSION_TX_MIN_INPUT_COUNT                     = 12;
 const size_t   FUSION_TX_MIN_IN_OUT_COUNT_RATIO              = 4;
 
@@ -107,12 +101,10 @@ const char     GENESIS_COINBASE_TX_HEX[]                     = "010a01ff0001c084
 const uint32_t GENESIS_NONCE                                 = 70;
 const uint64_t GENESIS_TIMESTAMP                             = 1528086815;
 
-const uint8_t  TRANSACTION_VERSION_1                         = 1;
-const uint8_t  TRANSACTION_VERSION_2                         = 2;
-const uint8_t  BLOCK_MAJOR_VERSION_1                         = 1;
-const uint8_t  BLOCK_MAJOR_VERSION_2                         = 2;
-const uint8_t  BLOCK_MAJOR_VERSION_3                         = 3;
-const uint8_t  BLOCK_MAJOR_VERSION_4                         = 4;
+const uint8_t  CURRENT_TRANSACTION_VERSION                   = 1;
+const uint8_t  CURRENT_BLOCK_MAJOR                           = 1; //if put current 2 then next is 3 and soon....
+const uint8_t  NEXT_BLOCK_MAJOR                              = 2; //this need from base CURRENT_BLOCK_MAJOR
+const uint8_t  NEXT_BLOCK_MAJOR_LIMIT                        = 5; //this Maximum layer block
 const uint8_t  BLOCK_MINOR_VERSION_0                         = 0;
 const uint8_t  BLOCK_MINOR_VERSION_1                         = 1;
 

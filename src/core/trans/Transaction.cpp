@@ -146,7 +146,7 @@ namespace CryptoNote {
     TransactionExtraPublicKey pk = { txKeys.publicKey };
     extra.set(pk);
 
-    transaction.version = TRANSACTION_VERSION_1;
+    transaction.version = CURRENT_TRANSACTION_VERSION;
     transaction.unlockTime = 0;
     transaction.extra = extra.serialize();
 
@@ -254,7 +254,7 @@ namespace CryptoNote {
   size_t TransactionImpl::addInput(const MultisignatureInput& input) {
     checkIfSigning();
     transaction.inputs.push_back(input);
-    transaction.version = TRANSACTION_VERSION_2;
+    transaction.version = CURRENT_TRANSACTION_VERSION;
     invalidateHash();
     return transaction.inputs.size() - 1;
   }
@@ -287,7 +287,7 @@ namespace CryptoNote {
 
     TransactionOutput out = { amount, outMsig };
     transaction.outputs.emplace_back(out);
-    transaction.version = TRANSACTION_VERSION_2;
+    transaction.version = CURRENT_TRANSACTION_VERSION;
     invalidateHash();
 
     return outputIndex;

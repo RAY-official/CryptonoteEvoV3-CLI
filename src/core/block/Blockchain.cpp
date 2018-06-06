@@ -304,8 +304,8 @@ Blockchain::Blockchain(const Currency& currency, tx_memory_pool& tx_pool, ILogge
   m_tx_pool(tx_pool),
   m_current_block_cumul_sz_limit(0),
   m_is_in_checkpoint_zone(false),
-  m_upgradeDetectorv2(currency, m_blocks, BLOCK_MAJOR_VERSION_2, logger),
-  m_upgradeDetectorv3(currency, m_blocks, BLOCK_MAJOR_VERSION_3, logger),
+  m_upgradeDetectorv2(currency, m_blocks, NEXT_BLOCK_MAJOR, logger),
+  m_upgradeDetectorv3(currency, m_blocks, NEXT_BLOCK_MAJOR_LIMIT, logger),
   m_checkpoints(logger),
   m_paymentIdIndex(blockchainIndexesEnabled),
   m_timestampIndex(blockchainIndexesEnabled),
@@ -709,7 +709,7 @@ difficulty_type Blockchain::difficultyAtHeight(uint64_t height) {
 }
 
 uint8_t Blockchain::getBlockMajorVersionForHeight(uint32_t height) const {
-  return height > m_upgradeDetectorv2.upgradeHeight() ? m_upgradeDetectorv2.targetVersion() : BLOCK_MAJOR_VERSION_1;
+  return height > m_upgradeDetectorv2.upgradeHeight() ? m_upgradeDetectorv2.targetVersion() : CURRENT_BLOCK_MAJOR;
 }
 
 bool Blockchain::rollback_blockchain_switching(std::list<Block> &original_chain, size_t rollback_height) {
@@ -1643,7 +1643,7 @@ uint64_t Blockchain::get_adjusted_time() {
 bool Blockchain::check_tx_outputs(const Transaction& tx) const {
   for (TransactionOutput out : tx.outputs) {
     if (out.target.type() == typeid(MultisignatureOutput)) {
-      if (tx.version < TRANSACTION_VERSION_2) {
+      if (tx.version < CURRENT_TRANSACTION_VERSION) {
         logger(INFO, BRIGHT_WHITE) << getObjectHash(tx) << " contains multisignature output but have verion " << tx.version;
         return false;
       } else {
@@ -1913,7 +1913,7 @@ bool Blockchain::pushBlock(const Block& blockData, const std::vector<Transaction
     uint64_t fee = in_amount < out_amount ? CryptoNote::parameters::MINIMUM_FEE : in_amount - out_amount;
 
     bool isTransactionValid = true;
-    if (block.bl.majorVersion == BLOCK_MAJOR_VERSION_1 && transactions[i].version > TRANSACTION_VERSION_1) {
+    if (block.bl.majorVersion == CURRENT_BLOCK_MAJOR && transactions[i].version > CURRENT_TRANSACTION_VERSION) {
       isTransactionValid = false;
       logger(INFO, BRIGHT_WHITE) << "Block " << blockHash << " can't contain transaction " << tx_id << " because it has invalid version " << transactions[i].version;
     }

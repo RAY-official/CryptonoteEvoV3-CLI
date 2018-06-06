@@ -22,3 +22,14 @@ Release notes 3.0.2
 - checkpoint 6/4/2018
   - improve chain
   - wallet log
+- checkpoint 6/5/2018
+  - added log
+  - improve wallet
+  - remove unecessary file
+
+Release notes 3.0.3
+
+- checkpoint 6/6/2018
+  - update transfer
+  - fixed update for autoremove transaction chain
+  - faster block

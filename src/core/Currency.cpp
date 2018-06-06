@@ -107,7 +107,7 @@ bool Currency::generateGenesisBlock() {
     return false;
   }
 
-  m_genesisBlock.majorVersion = BLOCK_MAJOR_VERSION_1;
+  m_genesisBlock.majorVersion = CURRENT_BLOCK_MAJOR;
   m_genesisBlock.minorVersion = BLOCK_MINOR_VERSION_0;
   m_genesisBlock.timestamp = GENESIS_TIMESTAMP;
   m_genesisBlock.nonce = GENESIS_NONCE;
@@ -136,10 +136,10 @@ uint64_t Currency::baseRewardFunction(uint64_t alreadyGeneratedCoins, uint32_t h
 }
 
 uint32_t Currency::upgradeHeight(uint8_t majorVersion) const {
- if (majorVersion == BLOCK_MAJOR_VERSION_1) {
+ if (majorVersion == CURRENT_BLOCK_MAJOR) {
    return m_upgradeHeightv2;
  }
- else if (majorVersion == BLOCK_MAJOR_VERSION_2) {
+ else if (majorVersion == NEXT_BLOCK_MAJOR) {
    return m_upgradeHeightv3;
  }else {
    return static_cast<uint32_t>(-1);
@@ -363,7 +363,7 @@ bool Currency::constructMinerTx(uint32_t height, size_t medianSize, uint64_t alr
     return false;
   }
 
-  tx.version = TRANSACTION_VERSION_1;
+  tx.version = CURRENT_TRANSACTION_VERSION;
   // lock
   tx.unlockTime = height + m_minedMoneyUnlockWindow;
   tx.inputs.push_back(in);
@@ -632,11 +632,6 @@ CurrencyBuilder::CurrencyBuilder(Logging::ILogger& log) : m_currency(log) {
 
   rewardBlocksWindow(parameters::CRYPTONOTE_REWARD_BLOCKS_WINDOW);
   //LWMA
-  minMixin(parameters::MIN_MIXIN);
-  mandatoryMixinBlockVersion(parameters::MANDATORY_MIXIN_BLOCK_VERSION);
-  mixinStartHeight(parameters::MIXIN_START_HEIGHT);
-  mandatoryTransaction(parameters::MANDATORY_TRANSACTION);
-  killHeight(parameters::KILL_HEIGHT);
   tailEmissionReward(parameters::TAIL_EMISSION_REWARD);
 
   blockGrantedFullRewardZone(parameters::CRYPTONOTE_BLOCK_GRANTED_FULL_REWARD_ZONE);

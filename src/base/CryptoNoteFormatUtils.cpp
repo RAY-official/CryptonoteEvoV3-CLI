@@ -81,7 +81,7 @@ bool constructTransaction(
   tx.outputs.clear();
   tx.signatures.clear();
 
-  tx.version = TRANSACTION_VERSION_1;
+  tx.version = CURRENT_TRANSACTION_VERSION;
   tx.unlockTime = unlock_time;
 
   tx.extra = extra;
@@ -251,7 +251,7 @@ bool check_inputs_types_supported(const TransactionPrefix& tx) {
   for (const auto& in : tx.inputs) {
     const auto& inputType = in.type();
     if (inputType == typeid(MultisignatureInput)) {
-      if (tx.version < TRANSACTION_VERSION_2) {
+      if (tx.version < CURRENT_TRANSACTION_VERSION) {
         return false;
       }
     } else if (in.type() != typeid(KeyInput) && in.type() != typeid(MultisignatureInput)) {
@@ -279,7 +279,7 @@ bool check_outs_valid(const TransactionPrefix& tx, std::string* error) {
         return false;
       }
     } else if (out.target.type() == typeid(MultisignatureOutput)) {
-      if (tx.version < TRANSACTION_VERSION_2) {
+      if (tx.version < CURRENT_TRANSACTION_VERSION) {
         *error = "Transaction contains multisignature output but its version is less than 2";
         return false;
       }
@@ -460,7 +460,7 @@ bool get_block_hash(const Block& b, Hash& res) {
     return false;
   }
 
-  if (BLOCK_MAJOR_VERSION_2 <= b.majorVersion) {
+  if (NEXT_BLOCK_MAJOR <= b.majorVersion) {
     BinaryArray parent_blob;
     auto serializer = makeParentBlockSerializer(b, true, false);
     if (!toBinaryArray(serializer, parent_blob))

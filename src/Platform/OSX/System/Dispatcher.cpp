@@ -1,3 +1,20 @@
+// Copyright (c) 2012-2016, The CryptoNote developers, The Bytecoin developers
+//
+// This file is part of Bytecoin.
+//
+// Bytecoin is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Bytecoin is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with Bytecoin.  If not, see <http://www.gnu.org/licenses/>.
+
 #include "Dispatcher.h"
 #include <cassert>
 #include <string>
@@ -38,8 +55,8 @@ private:
   pthread_mutex_t& mutex;
 };
 
-const size_t STACK_SIZE = 64 * 1024;
-
+//const size_t STACK_SIZE = 64 * 1024;
+const size_t STACK_SIZE = 512 * 1024;
 }
 
 static_assert(Dispatcher::SIZEOF_PTHREAD_MUTEX_T == sizeof(pthread_mutex_t), "invalid pthread mutex size");
@@ -68,7 +85,6 @@ Dispatcher::Dispatcher() : lastCreatedTimer(0) {
           mainContext.group = &contextGroup;
           mainContext.groupPrev = nullptr;
           mainContext.groupNext = nullptr;
-          mainContext.inExecutionQueue = false;
           contextGroup.firstContext = nullptr;
           contextGroup.lastContext = nullptr;
           contextGroup.firstWaiter = nullptr;
@@ -129,10 +145,6 @@ void Dispatcher::dispatch() {
     if (firstResumingContext != nullptr) {
       context = firstResumingContext;
       firstResumingContext = context->next;
-
-      assert(context->inExecutionQueue);
-      context->inExecutionQueue = false;
-      
       break;
     }
     
@@ -225,12 +237,7 @@ bool Dispatcher::interrupted() {
 
 void Dispatcher::pushContext(NativeContext* context) {
   assert(context!=nullptr);
-
-  if (context->inExecutionQueue)
-    return;
-
   context->next = nullptr;
-  context->inExecutionQueue = true;
   if (firstResumingContext != nullptr) {
     assert(lastResumingContext != nullptr);
     lastResumingContext->next = context;
@@ -381,7 +388,6 @@ void Dispatcher::contextProcedure(void* ucontext) {
   context.uctx = ucontext;
   context.interrupted = false;
   context.next = nullptr;
-  context.inExecutionQueue = false;
   firstReusableContext = &context;
   uctx* oldContext = static_cast<uctx*>(context.uctx);
   if (swapcontext(oldContext, static_cast<uctx*>(currentContext->uctx)) == -1) {
@@ -392,7 +398,7 @@ void Dispatcher::contextProcedure(void* ucontext) {
     ++runningContextCount;
     try {
       context.procedure();
-    } catch(...) {
+    } catch(std::exception&) {
     }
 
     if (context.group != nullptr) {

@@ -1,3 +1,20 @@
+// Copyright (c) 2012-2016, The CryptoNote developers, The Bytecoin developers
+//
+// This file is part of Bytecoin.
+//
+// Bytecoin is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Bytecoin is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with Bytecoin.  If not, see <http://www.gnu.org/licenses/>.
+
 #include "TcpConnector.h"
 #include <cassert>
 #ifndef WIN32_LEAN_AND_MEAN
@@ -140,14 +157,6 @@ TcpConnection TcpConnector::connect(const Ipv4Address& address, uint16_t port) {
                   }
                 }
               } else {
-                if (context2.interrupted) {
-                  if (closesocket(connection) != 0) {
-                    throw std::runtime_error("TcpConnector::connect, closesocket failed, " + errorMessage(WSAGetLastError()));
-                  } else {
-                    throw InterruptedException();
-                  }
-                }
-
                 assert(transferred == 0);
                 assert(flags == 0);
                 DWORD value = 1;

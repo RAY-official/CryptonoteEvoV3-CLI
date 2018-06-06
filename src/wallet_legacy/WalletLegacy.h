@@ -14,6 +14,7 @@
 #include "core/trans/TransactionExtra.h"
 #include "base/CryptoNoteFormatUtils.h"
 #include "core/Currency.h"
+#include "log/ConsoleLogger.h"
 #include "WalletUserTransactionsCache.h"
 #include "WalletUnconfirmedTransactions.h"
 
@@ -143,6 +144,7 @@ private:
   std::string m_password;
   const CryptoNote::Currency& m_currency;
   INode& m_node;
+  Logging::ConsoleLogger m_consoleLogger;
   bool m_isStopping;
 
   std::atomic<uint64_t> m_lastNotifiedActualBalance;
