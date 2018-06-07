@@ -44,29 +44,6 @@ const std::vector<uint64_t> Currency::PRETTY_AMOUNTS = {
   10000000000000000000ull
 };
 
-const std::vector<uint64_t> Currency::POWERS_OF_TEN = {
-	1,
-	10,
-	100,
-	1000,
-	10000,
-	100000,
-	1000000,
-	10000000,
-	100000000,
-	1000000000,
-	10000000000,
-	100000000000,
-	1000000000000,
-	10000000000000,
-	100000000000000,
-	1000000000000000,
-	10000000000000000,
-	100000000000000000,
-	1000000000000000000ull,
-	10000000000000000000ull
-};
-
 bool Currency::init() {
   if (!generateGenesisBlock()) {
     logger(ERROR, BRIGHT_RED) << "Failed to generate genesis block";
@@ -120,21 +97,6 @@ bool Currency::generateGenesisBlock() {
   return true;
 }
 
-uint64_t Currency::baseRewardFunction(uint64_t alreadyGeneratedCoins, uint32_t height) const {
-  if (height == 1) {
-    return ICO_BLOCK_REWARD;
-  }
-
-  uint64_t incrIntervals = static_cast<uint64_t>(height) / REWARD_INCREASE_INTERVAL;
-  assert(incrIntervals < POWERS_OF_TEN.size());
-
-  uint64_t base_reward = START_BLOCK_REWARD * POWERS_OF_TEN[incrIntervals];
-  base_reward = (std::min)(base_reward, MAX_BLOCK_REWARD);
-  base_reward = (std::min)(base_reward, m_moneySupply - alreadyGeneratedCoins);
-
-  return base_reward;
-}
-
 uint32_t Currency::upgradeHeight(uint8_t majorVersion) const {
  if (majorVersion == CURRENT_BLOCK_MAJOR) {
    return m_upgradeHeightv2;
@@ -146,25 +108,48 @@ uint32_t Currency::upgradeHeight(uint8_t majorVersion) const {
  }
 }
 
-bool Currency::getBlockReward(size_t medianSize, size_t currentBlockSize, uint64_t alreadyGeneratedCoins,
+size_t Currency::blockGrantedFullRewardZoneByBlockVersion(uint8_t blockMajorVersion) const {
+  if (blockMajorVersion >= NEXT_BLOCK_MAJOR) {
+    return m_blockGrantedFullRewardZone;
+  }else if (blockMajorVersion == CURRENT_BLOCK_MAJOR) {
+    return CryptoNote::parameters::CRYPTONOTE_BLOCK_GRANTED_FULL_REWARD_ZONE_V2;
+  }else {
+    return CryptoNote::parameters::CRYPTONOTE_BLOCK_GRANTED_FULL_REWARD_ZONE_V1;
+  }
+}
+
+bool Currency::getBlockReward(uint8_t blockMajorVersion, size_t medianSize, size_t currentBlockSize, uint64_t alreadyGeneratedCoins,
   uint64_t fee, uint32_t height, uint64_t& reward, int64_t& emissionChange) const {
 
-   assert(alreadyGeneratedCoins <= m_moneySupply);
-  uint64_t baseReward = baseRewardFunction(alreadyGeneratedCoins, height);
+  assert(m_emissionSpeedFactor > 0 && m_emissionSpeedFactor <= 8 * sizeof(uint64_t));
+  uint64_t baseReward = (m_moneySupply - alreadyGeneratedCoins) >> m_emissionSpeedFactor;
+   if (height == 1) {
+      baseReward = m_genesisBlockReward;
+      std::cout << "Genesis block reward: " << baseReward << std::endl;
+   }
+   // Tail emission
+   if (height <= 20000) {
+      uint64_t bad_tail_emission_reward = uint64_t(1);
+   if (alreadyGeneratedCoins + bad_tail_emission_reward >= m_moneySupply || baseReward < bad_tail_emission_reward)
+   {
+      baseReward = bad_tail_emission_reward;
+   }
+   }
+      size_t blockGrantedFullRewardZone = blockGrantedFullRewardZoneByBlockVersion(blockMajorVersion);
+      medianSize = std::max(medianSize, blockGrantedFullRewardZone);
+   if (currentBlockSize > UINT64_C(2) * medianSize) {
+      logger(TRACE) << "Block cumulative size is too big: " << currentBlockSize << ", expected less than " << 2 * medianSize;
+      return false;
+   }
 
-  medianSize = std::max(medianSize, m_blockGrantedFullRewardZone);
-  if (currentBlockSize > UINT64_C(2) * medianSize) {
-    logger(TRACE) << "Block cumulative size is too big: " << currentBlockSize << ", expected less than " << 2 * medianSize;
-    return false;
-  }
-
-  uint64_t penalizedBaseReward = getPenalizedAmount(baseReward, medianSize, currentBlockSize);
-  uint64_t penalizedFee = getPenalizedAmount(fee, medianSize, currentBlockSize);
-
-  emissionChange = penalizedBaseReward - (fee - penalizedFee);
-  reward = penalizedBaseReward + penalizedFee;
-
-  return true;
+      uint64_t penalizedBaseReward = getPenalizedAmount(baseReward, medianSize, currentBlockSize);
+      uint64_t penalizedFee = blockMajorVersion >= CURRENT_BLOCK_MAJOR ? getPenalizedAmount(fee, medianSize, currentBlockSize) : fee;
+   if (cryptonoteCoinVersion() == 1) {
+      penalizedFee = getPenalizedAmount(fee, medianSize, currentBlockSize);
+   }
+      emissionChange = penalizedBaseReward - (fee - penalizedFee);
+      reward = penalizedBaseReward + penalizedFee;
+      return true;
 }
 
 uint64_t Currency::calculateInterest(uint64_t amount, uint32_t term, uint32_t height) const {
@@ -283,7 +268,7 @@ size_t Currency::maxBlockCumulativeSize(uint64_t height) const {
   return maxSize;
 }
 
-bool Currency::constructMinerTx(uint32_t height, size_t medianSize, uint64_t alreadyGeneratedCoins, size_t currentBlockSize,
+bool Currency::constructMinerTx(uint8_t blockMajorVersion, uint32_t height, size_t medianSize, uint64_t alreadyGeneratedCoins, size_t currentBlockSize,
   uint64_t fee, const AccountPublicAddress& minerAddress, Transaction& tx,
   const BinaryArray& extraNonce/* = BinaryArray()*/, size_t maxOuts/* = 1*/) const {
   tx.inputs.clear();
@@ -303,7 +288,7 @@ bool Currency::constructMinerTx(uint32_t height, size_t medianSize, uint64_t alr
 
   uint64_t blockReward;
   int64_t emissionChange;
-  if (!getBlockReward(medianSize, currentBlockSize, alreadyGeneratedCoins, fee, height, blockReward, emissionChange)) {
+  if (!getBlockReward(blockMajorVersion, medianSize, currentBlockSize, alreadyGeneratedCoins, fee, height, blockReward, emissionChange)) {
     logger(INFO) << "Block is too big";
     return false;
   }
@@ -519,7 +504,7 @@ bool Currency::parseAmount(const std::string& str, uint64_t& amount) const {
   return Common::fromString(strAmount, amount);
 }
 
-difficulty_type Currency::nextDifficulty(uint8_t version, uint32_t blockIndex, std::vector<uint64_t> timestamps,
+difficulty_type Currency::nextDifficulty(uint8_t blockMajorVersion, std::vector<uint64_t> timestamps,
   std::vector<difficulty_type> cumulativeDifficulties) const {
     // LWMA difficulty algorithm
     // Copyright (c) 2017-2018 Zawy
@@ -575,9 +560,9 @@ difficulty_type Currency::nextDifficulty(uint8_t version, uint32_t blockIndex, s
 
 	// minimum limit
 	// in production set larger
-	if (!isTestnet() && next_difficulty < 1000) {
-		next_difficulty = 1000;
-	}
+	//if (!isTestnet() && next_difficulty < 1000) {
+		//next_difficulty = 1000;
+	//}
 
 	return next_difficulty;
 }
@@ -628,12 +613,9 @@ CurrencyBuilder::CurrencyBuilder(Logging::ILogger& log) : m_currency(log) {
   moneySupply(parameters::MONEY_SUPPLY);
   emissionSpeedFactor(parameters::EMISSION_SPEED_FACTOR);
   cryptonoteCoinVersion(parameters::CRYPTONOTE_COIN_VERSION);
-  //genesisBlockReward(parameters::GENESIS_BLOCK_REWARD);
+  genesisBlockReward(parameters::PRE_BLOCK_REWARD);
 
   rewardBlocksWindow(parameters::CRYPTONOTE_REWARD_BLOCKS_WINDOW);
-  //LWMA
-  tailEmissionReward(parameters::TAIL_EMISSION_REWARD);
-
   blockGrantedFullRewardZone(parameters::CRYPTONOTE_BLOCK_GRANTED_FULL_REWARD_ZONE);
   minerTxBlobReservedSize(parameters::CRYPTONOTE_COINBASE_BLOB_RESERVED_SIZE);
 
@@ -685,7 +667,7 @@ CurrencyBuilder::CurrencyBuilder(Logging::ILogger& log) : m_currency(log) {
 Transaction CurrencyBuilder::generateGenesisTransaction() {
   CryptoNote::Transaction tx;
   CryptoNote::AccountPublicAddress ac = boost::value_initialized<CryptoNote::AccountPublicAddress>();
-  m_currency.constructMinerTx(0, 0, 0, 0, 0, ac, tx); // zero fee in genesis
+  m_currency.constructMinerTx(1,0, 0, 0, 0, 0, ac, tx); // zero fee in genesis
 
   return tx;
 }
