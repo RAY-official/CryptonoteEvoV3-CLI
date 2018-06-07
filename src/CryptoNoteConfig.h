@@ -73,7 +73,7 @@ const size_t   FUSION_TX_MIN_INPUT_COUNT                     = 12;
 const size_t   FUSION_TX_MIN_IN_OUT_COUNT_RATIO              = 4;
 
 const uint32_t UPGRADE_HEIGHT_V2                             = 1;
-const uint32_t UPGRADE_HEIGHT_V3                             = 2;
+const uint32_t UPGRADE_HEIGHT_V3                             = 2000000;
 const unsigned UPGRADE_VOTING_THRESHOLD                      = 90; // percent
 const uint32_t UPGRADE_VOTING_WINDOW                         = EXPECTED_NUMBER_OF_BLOCKS_PER_DAY; // blocks
 const uint32_t UPGRADE_WINDOW                                = EXPECTED_NUMBER_OF_BLOCKS_PER_DAY; // blocks
@@ -91,7 +91,7 @@ const char     MINER_CONFIG_FILE_NAME[]                      = "miner_conf.json"
 } // parameters
 
 const char     CRYPTONOTE_NAME[]                             = "Cryptonote";
-const char     GENESIS_COINBASE_TX_HEX[]                     = "010a01ff0001a0ccd705029b2e4c0281c0b02e7c53291a94d1d0cbff8883f8024f5142ee494ffbbd088071210120a9cf7910835807372336e937ae310144098b977c8f77519f1ac842e1bd037c";
+const char     GENESIS_COINBASE_TX_HEX[]                     = 
 
 const uint32_t GENESIS_NONCE                                 = 70;
 const uint64_t GENESIS_TIMESTAMP                             = 1528086815;
@@ -107,8 +107,8 @@ const size_t   BLOCKS_IDS_SYNCHRONIZING_DEFAULT_COUNT        = 10000; // by defa
 const size_t   BLOCKS_SYNCHRONIZING_DEFAULT_COUNT            = 128; // by default, blocks count in blocks downloading
 const size_t   COMMAND_RPC_GET_BLOCKS_FAST_MAX_COUNT         = 1000;
 
-const int      P2P_DEFAULT_PORT                              = 60060;
-const int      RPC_DEFAULT_PORT                              = 60040;
+const int      P2P_DEFAULT_PORT                              = 7080;
+const int      RPC_DEFAULT_PORT                              = 7081;
 
 const size_t   P2P_LOCAL_WHITE_PEERLIST_LIMIT                = 1000;
 const size_t   P2P_LOCAL_GRAY_PEERLIST_LIMIT                 = 5000;
@@ -126,7 +126,7 @@ const size_t   P2P_DEFAULT_HANDSHAKE_INVOKE_TIMEOUT          = 5000; // 5 second
 const char     P2P_STAT_TRUSTED_PUB_KEY[]                    = "F29507CA78955F37A3B783EE2C5123B8B6A34A0C5CAAE050922C62541614G090";
 
 const std::initializer_list<const char*> SEED_NODES = {
-  "0.0.0.0:60050",
+  "ec2-18-219-51-252.us-east-2.compute.amazonaws.com:7080", "ec2-13-58-224-8.us-east-2.compute.amazonaws.com:7080",
 };
 
 struct CheckpointData {
