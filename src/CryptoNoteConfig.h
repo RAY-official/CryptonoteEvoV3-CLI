@@ -91,7 +91,7 @@ const char     MINER_CONFIG_FILE_NAME[]                      = "miner_conf.json"
 } // parameters
 
 const char     CRYPTONOTE_NAME[]                             = "Cryptonote";
-const char     GENESIS_COINBASE_TX_HEX[]                     = "";
+const char     GENESIS_COINBASE_TX_HEX[]                     = "010a01ff0001a0ccd705029b2e4c0281c0b02e7c53291a94d1d0cbff8883f8024f5142ee494ffbbd08807121018c4201c876433f0a753efc9856a96ac1f77ef1ce7827da059896b9e777eb48a5";
 
 const uint32_t GENESIS_NONCE                                 = 70;
 const uint64_t GENESIS_TIMESTAMP                             = 1528086815;
@@ -99,7 +99,8 @@ const uint64_t GENESIS_TIMESTAMP                             = 1528086815;
 const uint8_t  CURRENT_TRANSACTION_VERSION                   = 1;
 const uint8_t  CURRENT_BLOCK_MAJOR                           = 1; //if put current 2 then next is 3 and soon....
 const uint8_t  NEXT_BLOCK_MAJOR                              = 2; //this need from base CURRENT_BLOCK_MAJOR
-const uint8_t  NEXT_BLOCK_MAJOR_LIMIT                        = 5; //this Maximum layer block
+const uint8_t  NEXT_BLOCK_MAJOR_0                            = 3; //this need from base CURRENT_BLOCK_MAJOR
+const uint8_t  NEXT_BLOCK_MAJOR_LIMIT                        = 4; //this Maximum layer block
 const uint8_t  BLOCK_MINOR_VERSION_0                         = 0;
 const uint8_t  BLOCK_MINOR_VERSION_1                         = 1;
 

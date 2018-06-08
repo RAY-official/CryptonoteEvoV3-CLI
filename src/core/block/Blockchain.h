@@ -284,6 +284,7 @@ namespace CryptoNote {
     uint64_t get_adjusted_time();
     bool complete_timestamps_vector(uint64_t start_height, std::vector<uint64_t>& timestamps);
     bool checkBlockVersion(const Block& b, const Crypto::Hash& blockHash);
+    bool checkParentBlockSize(const Block& b, const Crypto::Hash& blockHash);
     bool checkCumulativeBlockSize(const Crypto::Hash& blockId, size_t cumulativeBlockSize, uint64_t height);
     std::vector<Crypto::Hash> doBuildSparseChain(const Crypto::Hash& startBlockId) const;
     bool getBlockCumulativeSize(const Block& block, size_t& cumulativeSize);

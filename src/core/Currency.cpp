@@ -98,10 +98,10 @@ bool Currency::generateGenesisBlock() {
 }
 
 uint32_t Currency::upgradeHeight(uint8_t majorVersion) const {
- if (majorVersion == CURRENT_BLOCK_MAJOR) {
+ if (majorVersion == NEXT_BLOCK_MAJOR) {
    return m_upgradeHeightv2;
  }
- else if (majorVersion == NEXT_BLOCK_MAJOR) {
+ else if (majorVersion == NEXT_BLOCK_MAJOR_0) {
    return m_upgradeHeightv3;
  }else {
    return static_cast<uint32_t>(-1);
@@ -109,9 +109,9 @@ uint32_t Currency::upgradeHeight(uint8_t majorVersion) const {
 }
 
 size_t Currency::blockGrantedFullRewardZoneByBlockVersion(uint8_t blockMajorVersion) const {
-  if (blockMajorVersion >= NEXT_BLOCK_MAJOR) {
+  if (blockMajorVersion >= NEXT_BLOCK_MAJOR_0) {
     return m_blockGrantedFullRewardZone;
-  }else if (blockMajorVersion == CURRENT_BLOCK_MAJOR) {
+  }else if (blockMajorVersion == NEXT_BLOCK_MAJOR) {
     return CryptoNote::parameters::CRYPTONOTE_BLOCK_GRANTED_FULL_REWARD_ZONE_V2;
   }else {
     return CryptoNote::parameters::CRYPTONOTE_BLOCK_GRANTED_FULL_REWARD_ZONE_V1;
@@ -143,7 +143,7 @@ bool Currency::getBlockReward(uint8_t blockMajorVersion, size_t medianSize, size
    }
 
       uint64_t penalizedBaseReward = getPenalizedAmount(baseReward, medianSize, currentBlockSize);
-      uint64_t penalizedFee = blockMajorVersion >= CURRENT_BLOCK_MAJOR ? getPenalizedAmount(fee, medianSize, currentBlockSize) : fee;
+      uint64_t penalizedFee = blockMajorVersion >= NEXT_BLOCK_MAJOR ? getPenalizedAmount(fee, medianSize, currentBlockSize) : fee;
    if (cryptonoteCoinVersion() == 1) {
       penalizedFee = getPenalizedAmount(fee, medianSize, currentBlockSize);
    }
@@ -567,14 +567,72 @@ difficulty_type Currency::nextDifficulty(uint8_t blockMajorVersion, std::vector<
 	return next_difficulty;
 }
 
-bool Currency::checkProofOfWork(Crypto::cn_context& context, const Block& block, difficulty_type currentDifficulty,
-  Crypto::Hash& proofOfWork) const {
-
+bool Currency::checkProofOfWorkV1(Crypto::cn_context& context, const Block& block, difficulty_type currentDifficulty,
+    Crypto::Hash& proofOfWork) const {
+  if (CURRENT_BLOCK_MAJOR != block.majorVersion) {
+    return false;
+  }
+ 
   if (!get_block_longhash(context, block, proofOfWork)) {
     return false;
   }
+ 
+    return check_hash(proofOfWork, currentDifficulty);
+}
 
-  return check_hash(proofOfWork, currentDifficulty);
+bool Currency::checkProofOfWorkV2(Crypto::cn_context& context, const Block& block, difficulty_type currentDifficulty,
+    Crypto::Hash& proofOfWork) const {
+  if (block.majorVersion < NEXT_BLOCK_MAJOR) {
+    return false;
+  }
+ 
+  if (!get_block_longhash(context, block, proofOfWork)) {
+    return false;
+  }
+ 
+  if (!check_hash(proofOfWork, currentDifficulty)) {
+    return false;
+  }
+ 
+    TransactionExtraMergeMiningTag mmTag;
+  if (!getMergeMiningTagFromExtra(block.parentBlock.baseTransaction.extra, mmTag)) {
+    logger(ERROR) << "merge mining tag wasn't found in extra of the parent block miner transaction";
+    return false;
+  }
+ 
+  if (8 * sizeof(m_genesisBlockHash) < block.parentBlock.blockchainBranch.size()) {
+    return false;
+  }
+ 
+    Crypto::Hash auxBlockHeaderHash;
+  if (!get_aux_block_header_hash(block, auxBlockHeaderHash)) {
+    return false;
+  }
+ 
+    Crypto::Hash auxBlocksMerkleRoot;
+    Crypto::tree_hash_from_branch(block.parentBlock.blockchainBranch.data(), block.parentBlock.blockchainBranch.size(),
+    auxBlockHeaderHash, &m_genesisBlockHash, auxBlocksMerkleRoot);
+ 
+  if (auxBlocksMerkleRoot != mmTag.merkleRoot) {
+    logger(ERROR, BRIGHT_YELLOW) << "Aux block hash wasn't found in merkle tree";
+    return false;
+  }
+ 
+    return true;
+}
+ 
+bool Currency::checkProofOfWork(Crypto::cn_context& context, const Block& block, difficulty_type currentDifficulty, Crypto::Hash& proofOfWork) const {
+  switch (block.majorVersion) {
+  case CURRENT_BLOCK_MAJOR:
+  return checkProofOfWorkV1(context, block, currentDifficulty, proofOfWork);
+ 
+  case NEXT_BLOCK_MAJOR:
+  case NEXT_BLOCK_MAJOR_0:
+  return checkProofOfWorkV2(context, block, currentDifficulty, proofOfWork);
+  }
+ 
+  logger(ERROR, BRIGHT_RED) << "Unknown block major version: " << block.majorVersion << "." << block.minorVersion;
+  return false;
 }
 
 size_t Currency::getApproximateMaximumInputCount(size_t transactionSize, size_t outputCount, size_t mixinCount) const {

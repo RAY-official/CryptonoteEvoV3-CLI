@@ -363,7 +363,7 @@ void serialize(ParentBlockSerializer& pbs, ISerializer& serializer) {
 
 void serializeBlockHeader(BlockHeader& header, ISerializer& serializer) {
   serializer(header.majorVersion, "major_version");
-  if (header.majorVersion > NEXT_BLOCK_MAJOR_LIMIT) {
+  if (header.majorVersion > NEXT_BLOCK_MAJOR_0) {
     throw std::runtime_error("Wrong major version");
   }
 

@@ -336,10 +336,24 @@ bool core::get_block_template(Block& b, const AccountPublicAddress& adr, difficu
     b = boost::value_initialized<Block>();
     b.majorVersion = m_blockchain.getBlockMajorVersionForHeight(height);
 
-    if (CURRENT_BLOCK_MAJOR == b.majorVersion) {
-      b.minorVersion = BLOCK_MINOR_VERSION_1;
-    } else if (NEXT_BLOCK_MAJOR == b.majorVersion) {
-      b.minorVersion = BLOCK_MINOR_VERSION_0;
+    if (b.majorVersion == CURRENT_BLOCK_MAJOR) {
+      b.minorVersion = m_currency.upgradeHeight(NEXT_BLOCK_MAJOR) == UpgradeDetectorBase::UNDEF_HEIGHT ? BLOCK_MINOR_VERSION_1 : BLOCK_MINOR_VERSION_0;
+    } else if (b.majorVersion >= NEXT_BLOCK_MAJOR) {
+      if (m_currency.upgradeHeight(NEXT_BLOCK_MAJOR_0) == UpgradeDetectorBase::UNDEF_HEIGHT) {
+        b.minorVersion = b.majorVersion == NEXT_BLOCK_MAJOR ? BLOCK_MINOR_VERSION_1 : BLOCK_MINOR_VERSION_0;
+      } else {
+        b.minorVersion = BLOCK_MINOR_VERSION_0;
+      }
+
+      b.parentBlock.majorVersion = CURRENT_BLOCK_MAJOR;
+      b.parentBlock.majorVersion = BLOCK_MINOR_VERSION_0;
+      b.parentBlock.transactionCount = 1;
+      TransactionExtraMergeMiningTag mm_tag = boost::value_initialized<decltype(mm_tag)>();
+
+      if (!appendMergeMiningTagToExtra(b.parentBlock.baseTransaction.extra, mm_tag)) {
+        logger(ERROR, BRIGHT_RED) << "Failed to append merge mining tag to extra of the parent block miner transaction";
+        return false;
+      }
     }
 
     b.previousBlockHash = get_tail_id();
