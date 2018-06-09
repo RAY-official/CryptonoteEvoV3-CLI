@@ -18,9 +18,8 @@ const uint64_t CRYPTONOTE_DEFAULT_TX_SPENDABLE_AGE           = 10;
 
 const size_t   BLOCKCHAIN_TIMESTAMP_CHECK_WINDOW             = 11;
 
-const uint64_t MONEY_SUPPLY                                  = UINT64_C(250000000);
+const uint64_t MONEY_SUPPLY                                  = UINT64_C(25000000000000);
 
-const uint64_t TAIL_EMISSION_REWARD                          = 500;
 const size_t   CRYPTONOTE_COIN_VERSION                       = 1;
 
 const size_t   CRYPTONOTE_REWARD_BLOCKS_WINDOW               = 100;
@@ -34,9 +33,10 @@ const size_t   CRYPTONOTE_DISPLAY_DECIMAL_POINT                  = 6;
 // COIN - number of smallest units in one coin
 const uint64_t POINT                                         = UINT64_C(1000); // pow(10, 3)
 const uint64_t COIN                                          = UINT64_C(100000000); // pow(10, 6)
+const uint64_t PRE_BLOCK_REWARD	                             = UINT64_C(10000); // premine first block
 const uint64_t MINIMUM_FEE                                   = UINT64_C(10000); // pow(10, 4)
 const uint64_t DEFAULT_DUST_THRESHOLD                        = UINT64_C(10000); // pow(10, 4)
-const unsigned EMISSION_SPEED_FACTOR 			     = 20;
+const unsigned EMISSION_SPEED_FACTOR 			     = 21;
 static_assert(EMISSION_SPEED_FACTOR <= 8 * sizeof(uint64_t), "Bad EMISSION_SPEED_FACTOR");
 
 const uint64_t EXPECTED_NUMBER_OF_BLOCKS_PER_DAY             = 24 * 60 * 60 / DIFFICULTY_TARGET;
@@ -90,13 +90,8 @@ const char     MINER_CONFIG_FILE_NAME[]                      = "miner_conf.json"
 
 } // parameters
 
-const uint64_t START_BLOCK_REWARD                            = (UINT64_C(1000) * parameters::POINT);
-const uint64_t ICO_BLOCK_REWARD	                             = (UINT64_C(50) * parameters::COIN); // 20.4 billion ICO
-const uint64_t MAX_BLOCK_REWARD                              = (UINT64_C(10) * parameters::COIN);
-const uint64_t REWARD_INCREASE_INTERVAL                      = (UINT64_C(264000));
-
-const char     CRYPTONOTE_NAME[]                             = "Photon Coin";
-const char     GENESIS_COINBASE_TX_HEX[]                     = "010a01ff0001c0843d029b2e4c0281c0b02e7c53291a94d1d0cbff8883f8024f5142ee494ffbbd0880712101a0cc4df329989b12b9f6c64b9a30faabd3a56ec5b1c89e3a8117340157212547";
+const char     CRYPTONOTE_NAME[]                             = "Cryptonote";
+const char     GENESIS_COINBASE_TX_HEX[]                     = "010a01ff0001a0ccd705029b2e4c0281c0b02e7c53291a94d1d0cbff8883f8024f5142ee494ffbbd0880712101a856afd1b327f55baa6a50979c14bab482ce2fb99cdcc80777064d3c8d0b6edf";
 
 const uint32_t GENESIS_NONCE                                 = 70;
 const uint64_t GENESIS_TIMESTAMP                             = 1528086815;
@@ -104,7 +99,8 @@ const uint64_t GENESIS_TIMESTAMP                             = 1528086815;
 const uint8_t  CURRENT_TRANSACTION_VERSION                   = 1;
 const uint8_t  CURRENT_BLOCK_MAJOR                           = 1; //if put current 2 then next is 3 and soon....
 const uint8_t  NEXT_BLOCK_MAJOR                              = 2; //this need from base CURRENT_BLOCK_MAJOR
-const uint8_t  NEXT_BLOCK_MAJOR_LIMIT                        = 5; //this Maximum layer block
+const uint8_t  NEXT_BLOCK_MAJOR_0                            = 3; //this need from base CURRENT_BLOCK_MAJOR
+const uint8_t  NEXT_BLOCK_MAJOR_LIMIT                        = 4; //this Maximum layer block
 const uint8_t  BLOCK_MINOR_VERSION_0                         = 0;
 const uint8_t  BLOCK_MINOR_VERSION_1                         = 1;
 

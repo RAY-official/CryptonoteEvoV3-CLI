@@ -28,17 +28,10 @@ public:
   uint64_t moneySupply() const { return m_moneySupply; }
   unsigned int emissionSpeedFactor() const { return m_emissionSpeedFactor; }
   size_t cryptonoteCoinVersion() const { return m_cryptonoteCoinVersion; }
-  //uint64_t genesisBlockReward() const { return m_genesisBlockReward; }
+  uint64_t genesisBlockReward() const { return m_genesisBlockReward; }
 
   size_t rewardBlocksWindow() const { return m_rewardBlocksWindow; }
-  
-  //lwma
-  size_t minMixin() const { return m_minMixin; }
-  uint8_t mandatoryMixinBlockVersion() const { return m_mandatoryMixinBlockVersion; }
-  uint32_t mixinStartHeight() const { return m_mixinStartHeight; }
-  uint32_t mandatoryTransaction() const { return m_mandatoryTransaction; }
-  uint32_t killHeight() const { return m_killHeight; }
-  uint64_t tailEmissionReward() const { return m_tailEmissionReward; }
+  size_t blockGrantedFullRewardZoneByBlockVersion(uint8_t blockMajorVersion) const;
 
   size_t blockGrantedFullRewardZone() const { return m_blockGrantedFullRewardZone; }
   size_t minerTxBlobReservedSize() const { return m_minerTxBlobReservedSize; }
@@ -95,7 +88,7 @@ public:
   const Block& genesisBlock() const { return m_genesisBlock; }
   const Crypto::Hash& genesisBlockHash() const { return m_genesisBlockHash; }
 
-  bool getBlockReward(size_t medianSize, size_t currentBlockSize, uint64_t alreadyGeneratedCoins, uint64_t fee, uint32_t height,
+  bool getBlockReward(uint8_t blockMajorVersion,size_t medianSize, size_t currentBlockSize, uint64_t alreadyGeneratedCoins, uint64_t fee, uint32_t height,
   uint64_t& reward, int64_t& emissionChange) const;
   uint64_t calculateInterest(uint64_t amount, uint32_t term, uint32_t height) const;
   uint64_t calculateTotalTransactionInterest(const Transaction& tx, uint32_t height) const;
@@ -105,7 +98,7 @@ public:
   uint64_t getTransactionFee(const Transaction& tx, uint32_t height) const;
   size_t maxBlockCumulativeSize(uint64_t height) const;
 
-  bool constructMinerTx(uint32_t height, size_t medianSize, uint64_t alreadyGeneratedCoins, size_t currentBlockSize,
+  bool constructMinerTx(uint8_t blockMajorVersion, uint32_t height, size_t medianSize, uint64_t alreadyGeneratedCoins, size_t currentBlockSize,
     uint64_t fee, const AccountPublicAddress& minerAddress, Transaction& tx,
     const BinaryArray& extraNonce = BinaryArray(), size_t maxOuts = 1) const;
 
@@ -123,8 +116,10 @@ public:
   std::string formatAmount(int64_t amount) const;
   bool parseAmount(const std::string& str, uint64_t& amount) const;
 
-  difficulty_type nextDifficulty(uint8_t version, uint32_t blockIndex, std::vector<uint64_t> timestamps, std::vector<difficulty_type> cumulativeDifficulties) const;
-
+  difficulty_type nextDifficulty(uint8_t blockMajorVersion, std::vector<uint64_t> timestamps, std::vector<difficulty_type> cumulativeDifficulties) const;
+  
+  bool checkProofOfWorkV1(Crypto::cn_context& context, const Block& block, difficulty_type currentDifficulty, Crypto::Hash& proofOfWork) const;
+  bool checkProofOfWorkV2(Crypto::cn_context& context, const Block& block, difficulty_type currentDifficulty, Crypto::Hash& proofOfWork) const;
   bool checkProofOfWork(Crypto::cn_context& context, const Block& block, difficulty_type currentDifficulty, Crypto::Hash& proofOfWork) const;
 
   size_t getApproximateMaximumInputCount(size_t transactionSize, size_t outputCount, size_t mixinCount) const;
@@ -136,7 +131,6 @@ private:
   bool init();
 
   bool generateGenesisBlock();
-  uint64_t baseRewardFunction(uint64_t alreadyGeneratedCoins, uint32_t height) const;
 
 private:
   uint64_t m_maxBlockHeight;
@@ -151,18 +145,9 @@ private:
   uint64_t m_moneySupply;
   unsigned int m_emissionSpeedFactor;
   size_t m_cryptonoteCoinVersion;
-  //uint64_t m_genesisBlockReward;
+  uint64_t m_genesisBlockReward;
 
   size_t m_rewardBlocksWindow;
-  
-  //lwma
-  size_t m_minMixin;
-  uint8_t m_mandatoryMixinBlockVersion;
-  uint32_t m_mixinStartHeight;
-  uint32_t m_mandatoryTransaction;
-  uint32_t m_killHeight;
-  uint64_t m_tailEmissionReward;
-
   size_t m_blockGrantedFullRewardZone;
   size_t m_minerTxBlobReservedSize;
 
@@ -212,7 +197,6 @@ private:
   std::string m_blockchinIndicesFileName;
 
   static const std::vector<uint64_t> PRETTY_AMOUNTS;
-  static const std::vector<uint64_t> POWERS_OF_TEN;
 
   bool m_testnet;
   std::string m_genesisCoinbaseTxHex;
@@ -251,18 +235,10 @@ public:
   CurrencyBuilder& moneySupply(uint64_t val) { m_currency.m_moneySupply = val; return *this; }
   CurrencyBuilder& emissionSpeedFactor(unsigned int val);
   CurrencyBuilder& cryptonoteCoinVersion(size_t val) { m_currency.m_cryptonoteCoinVersion = val; return *this; }
-  //CurrencyBuilder& genesisBlockReward(uint64_t val) { m_currency.m_genesisBlockReward = val; return *this; }
+  CurrencyBuilder& genesisBlockReward(uint64_t val) { m_currency.m_genesisBlockReward = val; return *this; }
 
   CurrencyBuilder& rewardBlocksWindow(size_t val) { m_currency.m_rewardBlocksWindow = val; return *this; }
   
-  //lwma
-  CurrencyBuilder& minMixin(size_t val) { m_currency.m_minMixin = val; return *this; }
-  CurrencyBuilder& mandatoryMixinBlockVersion(uint8_t val) { m_currency.m_mandatoryMixinBlockVersion = val; return *this; }
-  CurrencyBuilder& mixinStartHeight(uint32_t val) { m_currency.m_mixinStartHeight = val; return *this; }
-  CurrencyBuilder& mandatoryTransaction(uint8_t val) { m_currency.m_mandatoryTransaction = val; return *this; }
-  CurrencyBuilder& killHeight(uint32_t val) { m_currency.m_killHeight = val; return *this; }
-  CurrencyBuilder& tailEmissionReward(uint64_t val) { m_currency.m_tailEmissionReward = val; return *this; }
-
   CurrencyBuilder& blockGrantedFullRewardZone(size_t val) { m_currency.m_blockGrantedFullRewardZone = val; return *this; }
   CurrencyBuilder& minerTxBlobReservedSize(size_t val) { m_currency.m_minerTxBlobReservedSize = val; return *this; }
 

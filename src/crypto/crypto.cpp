@@ -1,3 +1,20 @@
+// Copyright (c) 2012-2016, The CryptoNote developers, The Bytecoin developers, The Karbowanec developers
+//
+// This file is part of Bytecoin.
+//
+// Bytecoin is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Bytecoin is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with Bytecoin.  If not, see <http://www.gnu.org/licenses/>.
+
 #include <alloca.h>
 #include <cassert>
 #include <cstddef>
@@ -44,6 +61,36 @@ namespace Crypto {
     ge_scalarmult_base(&point, reinterpret_cast<unsigned char*>(&sec));
     ge_p3_tobytes(reinterpret_cast<unsigned char*>(&pub), &point);
   }
+
+  void crypto_ops::generate_deterministic_keys(PublicKey &pub, SecretKey &sec, SecretKey& second) {
+    lock_guard<mutex> lock(random_lock);
+    ge_p3 point;
+	sec = second;
+    sc_reduce32(reinterpret_cast<unsigned char*>(&sec)); // reduce in case second round of keys (sendkeys)
+    ge_scalarmult_base(&point, reinterpret_cast<unsigned char*>(&sec));
+    ge_p3_tobytes(reinterpret_cast<unsigned char*>(&pub), &point);
+  }
+
+  SecretKey crypto_ops::generate_m_keys(PublicKey &pub, SecretKey &sec, const SecretKey& recovery_key, bool recover) {
+    lock_guard<mutex> lock(random_lock);
+    ge_p3 point;
+    SecretKey rng;
+    if (recover)
+    {
+      rng = recovery_key;
+    }
+    else
+    {
+      random_scalar(reinterpret_cast<EllipticCurveScalar&>(rng));
+    }
+    sec = rng;
+    sc_reduce32(reinterpret_cast<unsigned char*>(&sec)); // reduce in case second round of keys (sendkeys)
+    ge_scalarmult_base(&point, reinterpret_cast<unsigned char*>(&sec));
+    ge_p3_tobytes(reinterpret_cast<unsigned char*>(&pub), &point);
+
+    return rng;
+  }
+
 
   bool crypto_ops::check_key(const PublicKey &key) {
     ge_p3 point;

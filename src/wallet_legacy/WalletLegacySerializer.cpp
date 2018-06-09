@@ -11,33 +11,17 @@
 #include "base/CryptoNoteSerialization.h"
 #include "WalletUserTransactionsCache.h"
 #include "wallet/WalletErrors.h"
+#include "wallet/WalletUtils.h"
 #include "KeysStorage.h"
 
 using namespace Common;
-
-namespace {
-
-const uint32_t WALLET_SERIALIZATION_VERSION = 2;
-
-bool verifyKeys(const Crypto::SecretKey& sec, const Crypto::PublicKey& expected_pub) {
-  Crypto::PublicKey pub;
-  bool r = Crypto::secret_key_to_public_key(sec, pub);
-  return r && expected_pub == pub;
-}
-
-void throwIfKeysMissmatch(const Crypto::SecretKey& sec, const Crypto::PublicKey& expected_pub) {
-  if (!verifyKeys(sec, expected_pub))
-    throw std::system_error(make_error_code(CryptoNote::error::WRONG_PASSWORD));
-}
-
-}
 
 namespace CryptoNote {
 
 WalletLegacySerializer::WalletLegacySerializer(CryptoNote::AccountBase& account, WalletUserTransactionsCache& transactionsCache) :
   account(account),
   transactionsCache(transactionsCache),
-  walletSerializationVersion(WALLET_SERIALIZATION_VERSION)
+  walletSerializationVersion(1)
 {
 }
 

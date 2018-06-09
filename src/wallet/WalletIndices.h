@@ -5,7 +5,6 @@
 
 #include "ITransfersContainer.h"
 #include "IWallet.h"
-#include "IWalletLegacy.h" //TODO: make common types for all of our APIs (such as PublicKey, KeyPair, etc)
 
 #include <boost/multi_index_container.hpp>
 #include <boost/multi_index/ordered_index.hpp>
@@ -13,6 +12,9 @@
 #include <boost/multi_index/hashed_index.hpp>
 #include <boost/multi_index/composite_key.hpp>
 #include <boost/multi_index/member.hpp>
+
+#include "common/FileMappedVector.h"
+#include "crypto/chacha8.h"
 
 namespace CryptoNote {
 
@@ -26,6 +28,14 @@ struct WalletRecord {
   uint64_t actualBalance = 0;
   time_t creationTimestamp;
 };
+
+#pragma pack(push, 1)
+struct EncryptedWalletRecord {
+  Crypto::chacha8_iv iv;
+  // Secret key, public key and creation timestamp
+  uint8_t data[sizeof(Crypto::PublicKey) + sizeof(Crypto::SecretKey) + sizeof(uint64_t)];
+};
+#pragma pack(pop)
 
 struct RandomAccessIndex {};
 struct KeysIndex {};
@@ -81,6 +91,7 @@ typedef boost::multi_index_container <
   >
 > WalletTransactions;
 
+typedef Common::FileMappedVector<EncryptedWalletRecord> ContainerStorage;
 typedef std::pair<size_t, CryptoNote::WalletTransfer> TransactionTransferPair;
 typedef std::vector<TransactionTransferPair> WalletTransfers;
 typedef std::map<size_t, CryptoNote::Transaction> UncommitedTransactions;

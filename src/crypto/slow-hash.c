@@ -496,7 +496,7 @@ void slow_hash_free_state(void)
     else
     {
 #if defined(_MSC_VER) || defined(__MINGW32__)
-        VirtualFree(hp_state, MEMORY, MEM_RELEASE);
+        VirtualFree(hp_state, 0, MEM_RELEASE);
 #else
         munmap(hp_state, MEMORY);
 #endif
@@ -1102,7 +1102,7 @@ void cn_slow_hash(const void *data, size_t length, char *hash, int variant)
     memcpy(text, state.init, INIT_SIZE_BYTE);
 
 	VARIANT1_INIT64();
-
+	
     aes_ctx = (oaes_ctx *) oaes_alloc();
     oaes_key_import_data(aes_ctx, state.hs.b, AES_KEY_SIZE);
 
@@ -1270,7 +1270,7 @@ void cn_slow_hash(const void *data, size_t length, char *hash, int variant) {
   aes_ctx = (oaes_ctx *) oaes_alloc();
 
   VARIANT1_PORTABLE_INIT();
-
+  
   oaes_key_import_data(aes_ctx, aes_key, AES_KEY_SIZE);
   for (i = 0; i < MEMORY / INIT_SIZE_BYTE; i++) {
     for (j = 0; j < INIT_SIZE_BLK; j++) {

@@ -153,13 +153,6 @@ struct TransferCommand {
         logger(ERROR, BRIGHT_RED) << "mixin_count should be non-negative integer, got " << mixin_str;
         return false;
       }
-	       if (fake_outs_count < m_currency.minMixin()) {
-                logger(ERROR, BRIGHT_RED) << "mixin should be equal or bigger to " << m_currency.minMixin();
-                return false;
-              }
-
-      bool feeFound = false;
-      bool ttlFound = false;
 
       while (!ar.eof()) {
         auto arg = ar.next();
@@ -174,13 +167,6 @@ struct TransferCommand {
               return false;
             }
           } else if (arg == "-f") {
-              feeFound = true;
-
-            if (ttlFound) {
-              logger(ERROR, BRIGHT_RED) << "Transaction with TTL can not have fee";
-              return false;
-            }
-
             bool ok = m_currency.parseAmount(value, fee);
             if (!ok) {
               logger(ERROR, BRIGHT_RED) << "Fee value is invalid: " << value;
@@ -189,23 +175,6 @@ struct TransferCommand {
 
             if (fee < m_currency.minimumFee()) {
               logger(ERROR, BRIGHT_RED) << "Fee value is less than minimum: " << m_currency.minimumFee();
-              return false;
-            }
-          } else if (arg == "-m") {
-            messages.emplace_back(value);
-          } else if (arg == "-ttl") {
-            ttlFound = true;
-
-            if (feeFound) {
-              logger(ERROR, BRIGHT_RED) << "Transaction with fee can not have TTL";
-              return false;
-            } else {
-              fee = 0;
-            }
-
-            if (!Common::fromString(value, ttl) || ttl < 1 || ttl * 60 > m_currency.mempoolTxLiveTime()) {
-              logger(ERROR, BRIGHT_RED) << "TTL has invalid format: \"" << value << "\", " <<
-                "enter time from 1 to " << (m_currency.mempoolTxLiveTime() / 60) << " minutes";
               return false;
             }
           }

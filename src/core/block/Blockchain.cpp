@@ -453,7 +453,34 @@ bool Blockchain::init(const std::string& config_folder, bool load_existing) {
     }
   }
 
-  if (!m_upgradeDetectorv2.init()) {
+  uint32_t lastValidCheckpointHeight = 0;
+  if (!checkCheckpoints(lastValidCheckpointHeight)) {
+    logger(WARNING, BRIGHT_YELLOW) << "Invalid checkpoint found. Rollback blockchain to height=" << lastValidCheckpointHeight;
+    rollbackBlockchainTo(lastValidCheckpointHeight);
+  }
+
+  if (!m_upgradeDetectorv2.init() || !m_upgradeDetectorv3.init()) {
+    logger(ERROR, BRIGHT_RED) << "Failed to initialize upgrade detector";
+    return false;
+  }
+
+  bool reinitUpgradeDetectors = false;
+  if (!checkUpgradeHeight(m_upgradeDetectorv2)) {
+    uint32_t upgradeHeight = m_upgradeDetectorv2.upgradeHeight();
+    assert(upgradeHeight != UpgradeDetectorBase::UNDEF_HEIGHT);
+    logger(WARNING, BRIGHT_YELLOW) << "Invalid block version at " << upgradeHeight + 1 << ": real=" << static_cast<int>(m_blocks[upgradeHeight + 1].bl.majorVersion) <<
+      " expected=" << static_cast<int>(m_upgradeDetectorv2.targetVersion()) << ". Rollback blockchain to height=" << upgradeHeight;
+    rollbackBlockchainTo(upgradeHeight);
+    reinitUpgradeDetectors = true;
+  } else if (!checkUpgradeHeight(m_upgradeDetectorv3)) {
+    uint32_t upgradeHeight = m_upgradeDetectorv3.upgradeHeight();
+    logger(WARNING, BRIGHT_YELLOW) << "Invalid block version at " << upgradeHeight + 1 << ": real=" << static_cast<int>(m_blocks[upgradeHeight + 1].bl.majorVersion) <<
+      " expected=" << static_cast<int>(m_upgradeDetectorv3.targetVersion()) << ". Rollback blockchain to height=" << upgradeHeight;
+    rollbackBlockchainTo(upgradeHeight);
+    reinitUpgradeDetectors = true;
+  }
+
+  if (reinitUpgradeDetectors && (!m_upgradeDetectorv2.init() || !m_upgradeDetectorv3.init())) {
     logger(ERROR, BRIGHT_RED) << "Failed to initialize upgrade detector";
     return false;
   }
@@ -674,7 +701,7 @@ difficulty_type Blockchain::getDifficultyForNextBlock() {
   uint32_t block_index = m_blocks.size();
   uint8_t block_major_version = getBlockMajorVersionForHeight(block_index + 1);
 
-  return m_currency.nextDifficulty(block_major_version, block_index, timestamps, commulative_difficulties);
+  return m_currency.nextDifficulty(block_major_version, timestamps, commulative_difficulties);
 }
 
 uint64_t Blockchain::getBlockTimestamp(uint32_t height) {
@@ -688,6 +715,16 @@ uint64_t Blockchain::getCoinsInCirculation() {
     return 0;
   } else {
     return m_blocks.back().already_generated_coins;
+  }
+}
+
+uint8_t Blockchain::getBlockMajorVersionForHeight(uint32_t height) const {
+  if (height > m_upgradeDetectorv3.upgradeHeight()) {
+    return m_upgradeDetectorv3.targetVersion();
+  } else if (height > m_upgradeDetectorv2.upgradeHeight()) {
+    return m_upgradeDetectorv2.targetVersion();
+  } else {
+    return CURRENT_BLOCK_MAJOR;
   }
 }
 
@@ -706,10 +743,6 @@ difficulty_type Blockchain::difficultyAtHeight(uint64_t height) {
 
   const auto& previous = m_blocks[height - 1];
   return current.cumulative_difficulty - previous.cumulative_difficulty;
-}
-
-uint8_t Blockchain::getBlockMajorVersionForHeight(uint32_t height) const {
-  return height > m_upgradeDetectorv2.upgradeHeight() ? m_upgradeDetectorv2.targetVersion() : CURRENT_BLOCK_MAJOR;
 }
 
 bool Blockchain::rollback_blockchain_switching(std::list<Block> &original_chain, size_t rollback_height) {
@@ -820,52 +853,90 @@ bool Blockchain::switch_to_alternative_blockchain(std::list<blocks_ext_by_hash::
 difficulty_type Blockchain::get_next_difficulty_for_alternative_chain(const std::list<blocks_ext_by_hash::iterator>& alt_chain, BlockEntry& bei) {
   std::vector<uint64_t> timestamps;
   std::vector<difficulty_type> commulative_difficulties;
-  if (alt_chain.size() < m_currency.difficultyBlocksCount()) {
-    std::lock_guard<decltype(m_blockchain_lock)> lk(m_blockchain_lock);
-    size_t main_chain_stop_offset = alt_chain.size() ? alt_chain.front()->second.height : bei.height;
-    size_t main_chain_count = m_currency.difficultyBlocksCount() - std::min(m_currency.difficultyBlocksCount(), alt_chain.size());
-    main_chain_count = std::min(main_chain_count, main_chain_stop_offset);
-    size_t main_chain_start_offset = main_chain_stop_offset - main_chain_count;
+  uint8_t BlockMajorVersion = getBlockMajorVersionForHeight(static_cast<uint32_t>(m_blocks.size()));
 
-    // skip genesis block
-    if (!main_chain_start_offset) {
-      ++main_chain_start_offset;
-    }
+  if (BlockMajorVersion == NEXT_BLOCK_MAJOR) {
 
-    for (; main_chain_start_offset < main_chain_stop_offset; ++main_chain_start_offset) {
-      timestamps.push_back(m_blocks[main_chain_start_offset].bl.timestamp);
-      commulative_difficulties.push_back(m_blocks[main_chain_start_offset].cumulative_difficulty);
-    }
+   if (alt_chain.size() < m_currency.difficultyBlocksCount2()) {
+     std::lock_guard<decltype(m_blockchain_lock)> lk(m_blockchain_lock);
+     size_t main_chain_stop_offset = alt_chain.size() ? alt_chain.front()->second.height : bei.height;
+     size_t main_chain_count = m_currency.difficultyBlocksCount2() - std::min(m_currency.difficultyBlocksCount2(), alt_chain.size());
+     main_chain_count = std::min(main_chain_count, main_chain_stop_offset);
+     size_t main_chain_start_offset = main_chain_stop_offset - main_chain_count;
 
-    if (!((alt_chain.size() + timestamps.size()) <= m_currency.difficultyBlocksCount())) {
-      logger(ERROR, BRIGHT_RED) << "Internal error, alt_chain.size()[" << alt_chain.size() << "] + timestamps.size()[" << timestamps.size() <<
-        "] NOT <= m_currency.difficultyBlocksCount()[" << m_currency.difficultyBlocksCount() << ']'; return false;
-    }
+   if (!main_chain_start_offset)
+     ++main_chain_start_offset; //skip genesis block
+   for (; main_chain_start_offset < main_chain_stop_offset; ++main_chain_start_offset) {
+     timestamps.push_back(m_blocks[main_chain_start_offset].bl.timestamp);
+     commulative_difficulties.push_back(m_blocks[main_chain_start_offset].cumulative_difficulty);
+   }
 
-    for (auto it : alt_chain) {
-      timestamps.push_back(it->second.bl.timestamp);
-      commulative_difficulties.push_back(it->second.cumulative_difficulty);
-    }
-  } else {
-    timestamps.resize(std::min(alt_chain.size(), m_currency.difficultyBlocksCount()));
-    commulative_difficulties.resize(std::min(alt_chain.size(), m_currency.difficultyBlocksCount()));
-    size_t count = 0;
-    size_t max_i = timestamps.size() - 1;
-    BOOST_REVERSE_FOREACH(auto it, alt_chain) {
-      timestamps[max_i - count] = it->second.bl.timestamp;
-      commulative_difficulties[max_i - count] = it->second.cumulative_difficulty;
-      count++;
-      if (count >= m_currency.difficultyBlocksCount()) {
-        break;
-      }
-    }
-  }
+   if (!((alt_chain.size() + timestamps.size()) <= m_currency.difficultyBlocksCount2())) {
+   logger(ERROR, BRIGHT_RED) << "Internal error, alt_chain.size()[" << alt_chain.size() << "] + timestamps.size()[" << timestamps.size() <<
+					"] NOT <= m_currency.difficultyBlocksCount()[" << m_currency.difficultyBlocksCount2() << ']'; 
+   return false;
+   }
+   for (auto it : alt_chain) {
+     timestamps.push_back(it->second.bl.timestamp);
+     commulative_difficulties.push_back(it->second.cumulative_difficulty);
+   }
+ }else {
+     timestamps.resize(std::min(alt_chain.size(), m_currency.difficultyBlocksCount2()));
+     commulative_difficulties.resize(std::min(alt_chain.size(), m_currency.difficultyBlocksCount2()));
+     size_t count = 0;
+     size_t max_i = timestamps.size() - 1;
+     BOOST_REVERSE_FOREACH(auto it, alt_chain) {
+     timestamps[max_i - count] = it->second.bl.timestamp;
+     commulative_difficulties[max_i - count] = it->second.cumulative_difficulty;
+     count++;
+   if (count >= m_currency.difficultyBlocksCount2()) {
+     break;
+   }
+   }
+ }
 
-  uint32_t block_index = m_blocks.size();
-  uint8_t block_major_version = getBlockMajorVersionForHeight(block_index + 1);
+   }else {
 
-  return m_currency.nextDifficulty(block_major_version, block_index,
-    timestamps, commulative_difficulties);
+   if (alt_chain.size() < m_currency.difficultyBlocksCount()) {
+     std::lock_guard<decltype(m_blockchain_lock)> lk(m_blockchain_lock);
+     size_t main_chain_stop_offset = alt_chain.size() ? alt_chain.front()->second.height : bei.height;
+     size_t main_chain_count = m_currency.difficultyBlocksCount() - std::min(m_currency.difficultyBlocksCount(), alt_chain.size());
+     main_chain_count = std::min(main_chain_count, main_chain_stop_offset);
+     size_t main_chain_start_offset = main_chain_stop_offset - main_chain_count;
+
+   if (!main_chain_start_offset)
+     ++main_chain_start_offset; //skip genesis block
+   for (; main_chain_start_offset < main_chain_stop_offset; ++main_chain_start_offset) {
+     timestamps.push_back(m_blocks[main_chain_start_offset].bl.timestamp);
+     commulative_difficulties.push_back(m_blocks[main_chain_start_offset].cumulative_difficulty);
+   }
+
+   if (!((alt_chain.size() + timestamps.size()) <= m_currency.difficultyBlocksCount())) {
+     logger(ERROR, BRIGHT_RED) << "Internal error, alt_chain.size()[" << alt_chain.size() << "] + timestamps.size()[" << timestamps.size() <<
+					"] NOT <= m_currency.difficultyBlocksCount()[" << m_currency.difficultyBlocksCount() << ']'; return false;
+   }
+   for (auto it : alt_chain) {
+     timestamps.push_back(it->second.bl.timestamp);
+     commulative_difficulties.push_back(it->second.cumulative_difficulty);
+   }
+   }else {
+     timestamps.resize(std::min(alt_chain.size(), m_currency.difficultyBlocksCount()));
+     commulative_difficulties.resize(std::min(alt_chain.size(), m_currency.difficultyBlocksCount()));
+     size_t count = 0;
+     size_t max_i = timestamps.size() - 1;
+     BOOST_REVERSE_FOREACH(auto it, alt_chain) {
+     timestamps[max_i - count] = it->second.bl.timestamp;
+     commulative_difficulties[max_i - count] = it->second.cumulative_difficulty;
+     count++;
+   if (count >= m_currency.difficultyBlocksCount()) {
+     break;
+   }
+   }
+   }
+
+}
+
+  return m_currency.nextDifficulty(BlockMajorVersion, timestamps, commulative_difficulties);
 }
 
 bool Blockchain::prevalidate_miner_transaction(const Block& b, uint32_t height) {
@@ -924,7 +995,7 @@ bool Blockchain::validate_miner_transaction(const Block& b, uint32_t height, siz
   get_last_n_blocks_sizes(lastBlocksSizes, m_currency.rewardBlocksWindow());
   size_t blocksSizeMedian = Common::medianValue(lastBlocksSizes);
 
-  if (!m_currency.getBlockReward(blocksSizeMedian, cumulativeBlockSize, alreadyGeneratedCoins, fee, height, reward, emissionChange)) {
+  if (!m_currency.getBlockReward(blockMajorVersion, blocksSizeMedian, cumulativeBlockSize, alreadyGeneratedCoins, fee, height, reward, emissionChange)) {
     logger(INFO, BRIGHT_WHITE) << "block size " << cumulativeBlockSize << " is bigger than allowed for this blockchain";
     return false;
   }
@@ -1024,6 +1095,11 @@ bool Blockchain::handle_alternative_block(const Block& b, const Crypto::Hash& id
   }
 
   if (!checkBlockVersion(b, id)) {
+    bvc.m_verification_failed = true;
+    return false;
+  }
+
+  if (!checkParentBlockSize(b, id)) {
     bvc.m_verification_failed = true;
     return false;
   }
@@ -1698,12 +1774,39 @@ bool Blockchain::check_block_timestamp(std::vector<uint64_t> timestamps, const B
 }
 
 bool Blockchain::checkBlockVersion(const Block& b, const Crypto::Hash& blockHash) {
-  uint64_t height = get_block_height(b);
+  uint32_t height = get_block_height(b);
   const uint8_t expectedBlockVersion = getBlockMajorVersionForHeight(height);
   if (b.majorVersion != expectedBlockVersion) {
-    logger(INFO, BRIGHT_WHITE) << "Block " << blockHash << " has wrong major version: " << static_cast<int>(b.majorVersion) <<
+    logger(TRACE) << "Block " << blockHash << " has wrong major version: " << static_cast<int>(b.majorVersion) <<
       ", at height " << height << " expected version is " << static_cast<int>(expectedBlockVersion);
     return false;
+  }
+
+  if (b.majorVersion == NEXT_BLOCK_MAJOR && b.parentBlock.majorVersion > CURRENT_BLOCK_MAJOR) {
+    logger(ERROR, BRIGHT_RED) << "Parent block of block " << blockHash << " has wrong major version: " << static_cast<int>(b.parentBlock.majorVersion) <<
+      ", at height " << height << " expected version is " << static_cast<int>(CURRENT_BLOCK_MAJOR);
+    return false;
+  }
+
+  return true;
+}
+
+bool Blockchain::checkParentBlockSize(const Block& b, const Crypto::Hash& blockHash) {
+  if (b.majorVersion >= NEXT_BLOCK_MAJOR) {
+    auto serializer = makeParentBlockSerializer(b, false, false);
+    size_t parentBlockSize;
+    if (!getObjectBinarySize(serializer, parentBlockSize)) {
+      logger(ERROR, BRIGHT_RED) <<
+        "Block " << blockHash << ": failed to determine parent block size";
+      return false;
+    }
+
+    if (parentBlockSize > 2 * 1024) {
+      logger(INFO, BRIGHT_WHITE) <<
+        "Block " << blockHash << " contains too big parent block: " << parentBlockSize <<
+        " bytes, expected no more than " << 2 * 1024 << " bytes";
+      return false;
+    }
   }
 
   return true;
@@ -1737,12 +1840,15 @@ bool Blockchain::getBlockCumulativeSize(const Block& block, size_t& cumulativeSi
 
 // Precondition: m_blockchain_lock is locked.
 bool Blockchain::update_next_comulative_size_limit() {
+  uint8_t nextBlockMajorVersion = getBlockMajorVersionForHeight(static_cast<uint32_t>(m_blocks.size()));
+  size_t nextBlockGrantedFullRewardZone = m_currency.blockGrantedFullRewardZoneByBlockVersion(nextBlockMajorVersion);
+
   std::vector<size_t> sz;
   get_last_n_blocks_sizes(sz, m_currency.rewardBlocksWindow());
 
   uint64_t median = Common::medianValue(sz);
-  if (median <= m_currency.blockGrantedFullRewardZone()) {
-    median = m_currency.blockGrantedFullRewardZone();
+  if (median <= nextBlockGrantedFullRewardZone) {
+    median = nextBlockGrantedFullRewardZone;
   }
 
   m_current_block_cumul_sz_limit = median * 2;
@@ -1831,6 +1937,11 @@ bool Blockchain::pushBlock(const Block& blockData, const std::vector<Transaction
   }
 
   if (!checkBlockVersion(blockData, blockHash)) {
+    bvc.m_verification_failed = true;
+    return false;
+  }
+
+  if (!checkParentBlockSize(blockData, blockHash)) {
     bvc.m_verification_failed = true;
     return false;
   }
