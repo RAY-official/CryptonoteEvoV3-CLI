@@ -91,7 +91,7 @@ const char     MINER_CONFIG_FILE_NAME[]                      = "miner_conf.json"
 } // parameters
 
 const char     CRYPTONOTE_NAME[]                             = "Cryptonote";
-const char     GENESIS_COINBASE_TX_HEX[]                     = "010a01ff0001a0ccd705029b2e4c0281c0b02e7c53291a94d1d0cbff8883f8024f5142ee494ffbbd08807121018c4201c876433f0a753efc9856a96ac1f77ef1ce7827da059896b9e777eb48a5";
+const char     GENESIS_COINBASE_TX_HEX[]                     = "010a01ff0001a0ccd705029b2e4c0281c0b02e7c53291a94d1d0cbff8883f8024f5142ee494ffbbd0880712101a856afd1b327f55baa6a50979c14bab482ce2fb99cdcc80777064d3c8d0b6edf";
 
 const uint32_t GENESIS_NONCE                                 = 70;
 const uint64_t GENESIS_TIMESTAMP                             = 1528086815;

@@ -16,10 +16,10 @@
 #include <boost/multi_index/member.hpp>
 #include <boost/multi_index/hashed_index.hpp>
 
-/*namespace CryptoNote {
+namespace CryptoNote {
 
 class IFusionManager;
-}*/
+}
 
 namespace PaymentService {
 
@@ -28,14 +28,14 @@ struct WalletConfiguration {
   std::string walletPassword;
 };
 
-void generateNewWallet(const CryptoNote::Currency &currency, const WalletConfiguration &conf, Logging::ILogger &logger, System::Dispatcher& dispatcher);
+void generateNewWallet(const CryptoNote::Currency& currency, const WalletConfiguration& conf, Logging::ILogger& logger, System::Dispatcher& dispatcher);
 
 struct TransactionsInBlockInfoFilter;
 
 class WalletService {
 public:
   WalletService(const CryptoNote::Currency& currency, System::Dispatcher& sys, CryptoNote::INode& node, CryptoNote::IWallet& wallet,
-const WalletConfiguration& conf, Logging::ILogger& logger);
+    CryptoNote::IFusionManager& fusionManager, const WalletConfiguration& conf, Logging::ILogger& logger);
   virtual ~WalletService();
 
   void init();
@@ -93,7 +93,7 @@ private:
 
   const CryptoNote::Currency& currency;
   CryptoNote::IWallet& wallet;
-  //CryptoNote::IFusionManager& fusionManager;
+  CryptoNote::IFusionManager& fusionManager;
   CryptoNote::INode& node;
   const WalletConfiguration& config;
   bool inited;

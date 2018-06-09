@@ -33,3 +33,8 @@ Release notes 3.0.3
   - update transfer
   - fixed update for autoremove transaction chain
   - faster block
+
+- checkpoint 6/9/2018
+  - improve wallet from bytecoin models
+  - crypto patch from karbo
+  - upgrade core system with PoS and MN support
