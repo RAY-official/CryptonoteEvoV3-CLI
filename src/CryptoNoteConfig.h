@@ -18,7 +18,7 @@ const uint64_t CRYPTONOTE_DEFAULT_TX_SPENDABLE_AGE           = 10;
 
 const size_t   BLOCKCHAIN_TIMESTAMP_CHECK_WINDOW             = 11;
 
-const uint64_t MONEY_SUPPLY                                  = UINT64_C(2500000000000000000);
+const uint64_t MONEY_SUPPLY                                  = UINT64_C(250000000000000);
 
 const size_t   CRYPTONOTE_COIN_VERSION                       = 1;
 
@@ -28,15 +28,15 @@ const size_t   CRYPTONOTE_BLOCK_GRANTED_FULL_REWARD_ZONE_V2      = 1000000;
 const size_t   CRYPTONOTE_BLOCK_GRANTED_FULL_REWARD_ZONE_V1      = 100000;
 const size_t   CRYPTONOTE_BLOCK_GRANTED_FULL_REWARD_ZONE_CURRENT = CRYPTONOTE_BLOCK_GRANTED_FULL_REWARD_ZONE;
 const size_t   CRYPTONOTE_COINBASE_BLOB_RESERVED_SIZE            = 600;
-const size_t   CRYPTONOTE_DISPLAY_DECIMAL_POINT                  = 10;
+const size_t   CRYPTONOTE_DISPLAY_DECIMAL_POINT                  = 6;
 
 // COIN - number of smallest units in one coin
 const uint64_t POINT                                         = UINT64_C(1000); // pow(10, 3)
-const uint64_t COIN                                          = UINT64_C(1000000000000); // pow(10, 10)
-const uint64_t PRE_BLOCK_REWARD	                             = UINT64_C(10000000); // premine first block
-const uint64_t MINIMUM_FEE                                   = UINT64_C(10000); // pow(10, 4)
+const uint64_t COIN                                          = UINT64_C(100000000); // pow(10, 6)
+const uint64_t PRE_BLOCK_REWARD	                             = UINT64_C(10000000000000); // premine first block
+const uint64_t MINIMUM_FEE                                   = UINT64_C(1000); // pow(10, 3)
 const uint64_t DEFAULT_DUST_THRESHOLD                        = UINT64_C(10000); // pow(10, 4)
-const unsigned EMISSION_SPEED_FACTOR 			     = 21;
+const unsigned EMISSION_SPEED_FACTOR 			                   = 21;
 static_assert(EMISSION_SPEED_FACTOR <= 8 * sizeof(uint64_t), "Bad EMISSION_SPEED_FACTOR");
 
 const uint64_t EXPECTED_NUMBER_OF_BLOCKS_PER_DAY             = 24 * 60 * 60 / DIFFICULTY_TARGET;
