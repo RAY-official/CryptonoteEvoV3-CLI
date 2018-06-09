@@ -18,7 +18,7 @@ const uint64_t CRYPTONOTE_DEFAULT_TX_SPENDABLE_AGE           = 10;
 
 const size_t   BLOCKCHAIN_TIMESTAMP_CHECK_WINDOW             = 11;
 
-const uint64_t MONEY_SUPPLY                                  = UINT64_C(25000000000000);
+const uint64_t MONEY_SUPPLY                                  = UINT64_C(2500000000000000000);
 
 const size_t   CRYPTONOTE_COIN_VERSION                       = 1;
 
@@ -28,12 +28,12 @@ const size_t   CRYPTONOTE_BLOCK_GRANTED_FULL_REWARD_ZONE_V2      = 1000000;
 const size_t   CRYPTONOTE_BLOCK_GRANTED_FULL_REWARD_ZONE_V1      = 100000;
 const size_t   CRYPTONOTE_BLOCK_GRANTED_FULL_REWARD_ZONE_CURRENT = CRYPTONOTE_BLOCK_GRANTED_FULL_REWARD_ZONE;
 const size_t   CRYPTONOTE_COINBASE_BLOB_RESERVED_SIZE            = 600;
-const size_t   CRYPTONOTE_DISPLAY_DECIMAL_POINT                  = 6;
+const size_t   CRYPTONOTE_DISPLAY_DECIMAL_POINT                  = 10;
 
 // COIN - number of smallest units in one coin
 const uint64_t POINT                                         = UINT64_C(1000); // pow(10, 3)
-const uint64_t COIN                                          = UINT64_C(100000000); // pow(10, 6)
-const uint64_t PRE_BLOCK_REWARD	                             = UINT64_C(10000); // premine first block
+const uint64_t COIN                                          = UINT64_C(1000000000000); // pow(10, 10)
+const uint64_t PRE_BLOCK_REWARD	                             = UINT64_C(10000000); // premine first block
 const uint64_t MINIMUM_FEE                                   = UINT64_C(10000); // pow(10, 4)
 const uint64_t DEFAULT_DUST_THRESHOLD                        = UINT64_C(10000); // pow(10, 4)
 const unsigned EMISSION_SPEED_FACTOR 			     = 21;
@@ -90,7 +90,7 @@ const char     MINER_CONFIG_FILE_NAME[]                      = "miner_conf.json"
 
 } // parameters
 
-const char     CRYPTONOTE_NAME[]                             = "Cryptonote";
+const char     CRYPTONOTE_NAME[]                             = "Photon Coin";
 const char     GENESIS_COINBASE_TX_HEX[]                     = "010a01ff0001a0ccd705029b2e4c0281c0b02e7c53291a94d1d0cbff8883f8024f5142ee494ffbbd0880712101a856afd1b327f55baa6a50979c14bab482ce2fb99cdcc80777064d3c8d0b6edf";
 
 const uint32_t GENESIS_NONCE                                 = 70;
