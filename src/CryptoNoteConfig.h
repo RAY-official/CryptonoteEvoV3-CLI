@@ -91,10 +91,10 @@ const char     MINER_CONFIG_FILE_NAME[]                      = "miner_conf.json"
 } // parameters
 
 const char     CRYPTONOTE_NAME[]                             = "Photon Coin";
-const char     GENESIS_COINBASE_TX_HEX[]                     = "010a01ff0001a0ccd705029b2e4c0281c0b02e7c53291a94d1d0cbff8883f8024f5142ee494ffbbd0880712101a856afd1b327f55baa6a50979c14bab482ce2fb99cdcc80777064d3c8d0b6edf";
+const char     GENESIS_COINBASE_TX_HEX[]                     = "010a01ff0001c9faeb38029b2e4c0281c0b02e7c53291a94d1d0cbff8883f8024f5142ee494ffbbd088071210103f78c17e89179f1e5cf5f2f76454277e202c5e41d8a8e577dc040724e20b5c0";
 
 const uint32_t GENESIS_NONCE                                 = 70;
-const uint64_t GENESIS_TIMESTAMP                             = 1528086815;
+const uint64_t GENESIS_TIMESTAMP                             = 1528565126;
 
 const uint8_t  CURRENT_TRANSACTION_VERSION                   = 1;
 const uint8_t  CURRENT_BLOCK_MAJOR                           = 1; //if put current 2 then next is 3 and soon....
